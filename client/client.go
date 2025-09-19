@@ -6,6 +6,7 @@ import (
 	"github.com/dobyte/due/v2"
 	"github.com/dobyte/due/v2/cluster"
 	"github.com/dobyte/due/v2/cluster/client"
+	"github.com/dobyte/due/v2/encoding/json"
 	"github.com/dobyte/due/v2/log"
 	"math/rand"
 	"sync/atomic"
@@ -18,6 +19,7 @@ func main() {
 	// 创建客户端组件
 	component := client.NewClient(
 		client.WithClient(ws.NewClient()),
+		client.WithCodec(json.DefaultCodec),
 	)
 	// 初始化监听
 	initListen(component.Proxy())

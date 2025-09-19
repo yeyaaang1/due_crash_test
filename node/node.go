@@ -8,6 +8,7 @@ import (
 	"github.com/dobyte/due/v2"
 	"github.com/dobyte/due/v2/cluster"
 	"github.com/dobyte/due/v2/cluster/node"
+	"github.com/dobyte/due/v2/encoding/json"
 	"github.com/dobyte/due/v2/log"
 	"github.com/dobyte/due/v2/session"
 	"sync"
@@ -28,6 +29,7 @@ func main() {
 		node.WithName("node"),
 		node.WithLocator(locator),
 		node.WithRegistry(registry),
+		node.WithCodec(json.DefaultCodec),
 	)
 	// 注册监听
 	initListen(component.Proxy())
