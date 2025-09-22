@@ -42,13 +42,18 @@ func main() {
 }
 
 func initListen(proxy *node.Proxy) {
+	proxy.AddEventHandler(cluster.Disconnect, func(ctx node.Context) {
+		rwLocker.Lock()
+		defer rwLocker.Unlock()
+		delete(users, ctx.UID())
+	})
 	proxy.AddRouteHandler(message.RouteAuth, false, auth)
 	proxy.AddRouteHandler(message.RouteTest, false, handler)
 	proxy.AddRouteHandler(message.RouteCrash, false, handlerCrash)
 }
 
 var (
-	users    []int64
+	users    = make(map[int64]struct{})
 	rwLocker sync.RWMutex
 	once     sync.Once
 )
@@ -71,7 +76,7 @@ func auth(ctx node.Context) {
 		log.Errorf("bind gate err: %v", err)
 	}
 	rwLocker.Lock()
-	users = append(users, req.Uid)
+	users[req.Uid] = struct{}{}
 	rwLocker.Unlock()
 	log.Infof("auth: %v", req.Uid)
 	res = &message.Auth{Uid: req.Uid}
@@ -93,7 +98,6 @@ func handler(ctx node.Context) {
 	log.Infof("receive test message: %v", req.Msg)
 	res.Msg = req.Msg
 	err := proxy.Multicast(ctx.Context(), &cluster.MulticastArgs{
-		GID:     "",
 		Kind:    session.User,
 		Targets: []int64{ctx.UID()},
 		Message: &cluster.Message{
@@ -119,12 +123,10 @@ func handler(ctx node.Context) {
 }
 
 func crashLoop() {
-	rwLocker.RLock()
-	defer rwLocker.RUnlock()
+	userList := getUserList()
 	err := proxy.Multicast(context.Background(), &cluster.MulticastArgs{
-		GID:     "",
 		Kind:    session.User,
-		Targets: users,
+		Targets: userList,
 		Message: &cluster.Message{
 			Route: message.RouteMulticast,
 			Data:  &message.MulticastMsg{Msg: "multicast msg"},
@@ -133,6 +135,16 @@ func crashLoop() {
 	if err != nil {
 		log.Warnf("multicast failed: %v", err)
 	}
+}
+
+func getUserList() []int64 {
+	rwLocker.RLock()
+	defer rwLocker.RUnlock()
+	userList := make([]int64, 0, len(users))
+	for uid := range users {
+		userList = append(userList, uid)
+	}
+	return userList
 }
 
 func handlerCrash(ctx node.Context) {
