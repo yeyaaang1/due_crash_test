@@ -7,7 +7,7 @@ require (
 	github.com/dobyte/due/locate/redis/v2 v2.0.0-20250912063233-ee3b785169b3
 	github.com/dobyte/due/network/ws/v2 v2.0.0-20250912063233-ee3b785169b3
 	github.com/dobyte/due/registry/etcd/v2 v2.0.0-20250912063233-ee3b785169b3
-	github.com/dobyte/due/v2 v2.3.3
+	github.com/dobyte/due/v2 v2.3.4-0.20250920090240-84e057283c95
 )
 
 require (
